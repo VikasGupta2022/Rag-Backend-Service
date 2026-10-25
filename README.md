@@ -15,29 +15,29 @@ A production-grade, enterprise-ready **Retrieval-Augmented Generation (RAG)** ba
 
 ```mermaid
 flowchart TD
-    Client["Client / Frontend"] -->|HTTP / SSE Stream| API["FastAPI Application"]
+    Client["Client / Frontend"] -->|"HTTP / SSE Stream"| API["FastAPI Application"]
     
     subgraph "Query & Retrieval Pipeline"
-        API -->|1. Check Cache| RedisCache[("Redis Query Cache")]
-        RedisCache -.->|Hit (<15ms)| API
-        RedisCache -->|Miss: Query| QueryEngine["Hybrid Search Engine"]
+        API -->|"1. Check Cache"| RedisCache[("Redis Query Cache")]
+        RedisCache -.->|"Cache Hit (sub-15ms)"| API
+        RedisCache -->|"Miss: Query"| QueryEngine["Hybrid Search Engine"]
         
-        QueryEngine -->|Dense Vector Cosine| PGVector[("PostgreSQL pgvector (HNSW)")]
-        QueryEngine -->|Sparse Full-Text| PGText[("PostgreSQL GIN (tsvector)")]
+        QueryEngine -->|"Dense Vector Cosine"| PGVector[("PostgreSQL pgvector (HNSW)")]
+        QueryEngine -->|"Sparse Full-Text"| PGText[("PostgreSQL GIN (tsvector)")]
         
         PGVector --> RRF["Reciprocal Rank Fusion (RRF)"]
         PGText --> RRF
         
         RRF --> ContextBuilder["Context Assembler"]
-        ContextBuilder --> Gemini["Google Gemini 1.5 Flash"]
-        Gemini -->|Token-by-Token Stream| API
+        ContextBuilder --> Gemini["Google Gemini Flash"]
+        Gemini -->|"Token-by-Token Stream"| API
     end
 
     subgraph "Ingestion Pipeline"
         DocUpload["Document / File Upload"] --> API
         API --> Chunker["Semantic Text Chunker"]
-        Chunker --> Embedder["Gemini text-embedding-004 (768d)"]
-        Embedder -->|Batch Upsert| PGVector
+        Chunker --> Embedder["Gemini Embeddings (768d)"]
+        Embedder -->|"Batch Upsert"| PGVector
     end
 ```
 
